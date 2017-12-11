@@ -10,11 +10,14 @@ import base64
 import binascii
 import requests
 from bs4 import BeautifulSoup
+from os import path
+from PIL import Image
+import numpy as np
 import jieba
 jieba.load_userdict("userdict.txt")
 import jieba.posseg as pseg
 from snownlp import SnowNLP
-from wordcloud import WordCloud
+from wordcloud import WordCloud,STOPWORDS
 import matplotlib.pyplot as plt
 
 
@@ -113,36 +116,7 @@ class WeiboSpider:
         self.splitWords()
         
         # Generate Report
-
-        
-        # Generate Texts
-        male_texts = ''
-        female_texts = ''
-        male_keywords = []
-        female_keywords = []
-        for row in rows:
-            snow = SnowNLP(row[0])
-            if u'男嘉宾[向右]' in row[0]:
-                female_texts += row[0]
-                keywords = snow.tags()
-                for keyword in keywords:
-                    female_keywords.append(keyword)
-            elif u'女嘉宾[向右]' in row[0]:
-                male_texts += row[0]
-                keywords = snow.tags()
-                for keyword in keywords:
-                    male_keywords.append(keyword)
-            
-        with open('male.txt','w') as male_file:
-            male_file.write(male_texts)
-        with open('famale.txt','w') as famale_file:
-            famale_file.write(female_texts)
-        with open('male_keywords','w') as male_keywords_file:
-            male_keywords_file.write(','.join(male_keywords))
-        with open('famale_keywords','w') as female_keywords_file:
-            female_keywords_file.write(','.join(female_keywords))
-
-        self.splitWords(male_texts)
+        self.generateReport()
 
     def splitWords(self):
         # Filter Data
@@ -189,26 +163,13 @@ class WeiboSpider:
             tags = json.loads(row[1])
             snow = SnowNLP(row[0])
             if u'男嘉宾[向右]' in post:
-                female_tags += ','.join(lambda x:x['word'],tags)
+                female_tags += ','.join(map(lambda x:x['word'],tags))
             elif u'女嘉宾[向右]' in row[0]:
-                male_tags += ','.join(lambda x:x['word'],tags)
+                male_tags += ','.join(map(lambda x:x['word'],tags))
                 
         # WordCloud
-        wordcloud = WordCloud(
-            font_path='simfang.ttf',  # 设置字体
-            background_color="white",  # 背景颜色
-            max_words=2000,  # 词云显示的最大词数
-            #mask=back_coloring,  # 设置背景图片
-            max_font_size=100,  # 字体最大值
-            random_state=42,
-            width=1000, height=860, margin=2,# 设置图片默认的大小,但是如果使用背景图片的话,那么保存的图片大小将会按照其大小保存,margin为词语边缘距离
-        )
-
-        wordcloud.generate(female_tags)
-        plt.imshow(wordcloud)
-        plt.axis("off")
-        plt.show()
-        wordcloud.to_file('test.png')
+        self.generateWordCloud(female_tags,'female.png','output_female.png')
+        self.generateWordCloud(male_tags,'male.png','output_male.png')
 
     def adjustData(self):
         # Filter Data
@@ -239,13 +200,32 @@ class WeiboSpider:
             else:
                 self.cursor.execute(sql,('',id))
         self.connect.commit()
+
+    def generateWordCloud(self,text,background,output):
+    	back_coloring = np.array(Image.open(background))
+        stopwords = set(STOPWORDS)
+        stopwords.add(u'西安')
+        stopwords.add(u'生活')
+        wordcloud = WordCloud(
+            font_path='simfang.ttf',  # 设置字体
+            background_color="white",  # 背景颜色
+            max_words=5000,  # 词云显示的最大词数
+            mask=back_coloring,  # 设置背景图片
+            stopwords=stopwords, #停用词设置
+            max_font_size=75,  # 字体最大值
+            random_state=42,
+            width=1000, height=860, margin=15,# 设置图片默认的大小,但是如果使用背景图片的话,那么保存的图片大小将会按照其大小保存,margin为词语边缘距离
+        )
+
+        wordcloud.generate(text)
+        plt.imshow(wordcloud)
+        plt.axis("off")
+        plt.show()
+        wordcloud.to_file(output)
     
 
 if(__name__ == "__main__"):
     spider = WeiboSpider()
-    #spider.fetch('5566882921')
-    #spider.analyse()
-    #spider.adjustData()
-    #spider.splitWords()
-    spider.generateReport()
+    spider.fetch('5566882921')
+    spider.analyse()
 
