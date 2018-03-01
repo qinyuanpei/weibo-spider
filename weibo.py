@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-  
 import re
 import sys
-import rsa
 import time
 import json
 import jieba
@@ -19,17 +18,14 @@ import jieba.posseg as pseg
 from snownlp import SnowNLP
 from wordcloud import WordCloud,STOPWORDS
 import matplotlib.pyplot as plt
-
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
+import timer
 
 class WeiboSpider:
     def __init__(self):
         self.session = requests.session()
         self.connect = sqlite3.connect('data.db')
         self.cursor = self.connect.cursor()
-        self.cookies = {'Cookie':'_T_WM=3d32dc239920e7fd7e4888436bc7257d; SUB=_2A253EJYtDeRhGedM7FoX8CfOyD2IHXVU-jplrDV6PUJbkdANLWrAkW1NWD4ssZihobAqUplH_Et5OUdKnPcInZrt; SUHB=06ZEVxckIUHx5o; SCF=AoDyOPdYrB0tT--e-YNJqcjWlMVlEMlEnh48Q0AE7fYbDe18TU1uz0-Pr00tOe6OMs436OAfuGzY_Y__mscIwvw.'}
+        self.cookies = {'Cookie':'_T_WM=cb533a40185d08956a509dd3e160b837; SUB=_2A253frswDeRhGedM7FoX8CfOyD2IHXVUgMV4rDV6PUJbkdANLWX8kW1NWD4ssUZbwJYzHK16NYAxjjeDemzSaIya; SUHB=0FQqVzkhJmylMv; SCF=Aoo4SbjmA7AfDLSz2MMUYI2LYIbthnKpbwe20xACnbRMnUGHQuRaDo-qS5qDlWusErJ_M9OY3Ip6z7Tz-NP26J4.'}
         self.headers = {
             'User-Agent':'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36',
             'Refer':'https://weibo.cn/'
@@ -41,20 +37,20 @@ class WeiboSpider:
         soup = BeautifulSoup(html,'html.parser',from_encoding='utf-8')
 
         #count = self.matchPages(soup)
-        count = 463
-        for page in range(1,count+1):
+        count = 660
+        for page in range(500,count+1):
             time.sleep(10)
-            print u'正在抓取页面：' + 'https://weibo.cn/u/' + uid + '?page=' + str(page)
+            print(u'正在抓取页面：' + 'https://weibo.cn/u/' + uid + '?page=' + str(page))
             html = self.request('https://weibo.cn/u/' + uid + '?page=' + str(page))
             soup = BeautifulSoup(html,'html.parser',from_encoding='utf-8')
-            print u'正在写入页面：' + 'https://weibo.cn/u/' + uid + '?page=' + str(page)
+            print(u'正在写入页面：' + 'https://weibo.cn/u/' + uid + '?page=' + str(page))
             texts = self.matchMain(soup)
             for text in texts:  
                 self.fillSqlite(text)
 
-        self.cursor.execute('''SELECT Text FROM table_weibo''')
+        self.cursor.execute('''SELECT Post FROM table_weibo''')
         rows = self.cursor.fetchall()
-        print u'共抓取微博数据' + str(len(rows)) + u'条'
+        print(u'共抓取微博数据' + str(len(rows)) + u'条')
         self.connect.commit()
     
     def matchMain(self,soup):
@@ -91,12 +87,13 @@ class WeiboSpider:
         sql = '''CREATE TABLE IF NOT EXISTS table_weibo
         (
             ID INTEGER PRIMARY KEY autoincrement,
-            Post VARCHAR(500) NOT NULL,
-            Wish VARCHAR(500)
+            Text VARCHAR(500) NOT NULL,
+            Wish VARCHAR(500),
+            Tags VARCHAR(500)
         )'''
 
         self.cursor.execute(sql)
-        print u'数据库初始化完成!'
+        print(u'数据库初始化完成!')
 
     def fillSqlite(self,value):
         sql = 'INSERT INTO table_weibo VALUES(NULL,?,?)'
@@ -141,7 +138,10 @@ class WeiboSpider:
 
     def generateTags(self,text):
         snow = SnowNLP(text)
-        sentences = snow.tags
+        try:
+            sentences = snow.tags
+        except Exception as e:
+            sentences = []
         tags = []
         for s in sentences:
             words = pseg.cut(s[0])
@@ -159,12 +159,12 @@ class WeiboSpider:
         male_tags = ''
         female_tags = ''
         for row in rows:
-            post = row[0]
+            post = row[0].decode('utf-8')
             tags = json.loads(row[1])
-            snow = SnowNLP(row[0])
+            snow = SnowNLP(row[0].decode('utf-8'))
             if u'男嘉宾[向右]' in post:
                 female_tags += ','.join(map(lambda x:x['word'],tags))
-            elif u'女嘉宾[向右]' in row[0]:
+            elif u'女嘉宾[向右]' in post:
                 male_tags += ','.join(map(lambda x:x['word'],tags))
                 
         # WordCloud
@@ -185,7 +185,7 @@ class WeiboSpider:
         sql = "UPDATE table_weibo SET Wish = ? WHERE ID = ?"
         for row in rows:
             id = row[0]
-            post = row[1]
+            post = row[1].decode('utf-8')
             match = -1
             for pattern in patterns:
                 if(pattern in post):
@@ -202,16 +202,16 @@ class WeiboSpider:
         self.connect.commit()
 
     def generateWordCloud(self,text,background,output):
-    	back_coloring = np.array(Image.open(background))
-        stopwords = set(STOPWORDS)
-        stopwords.add(u'西安')
-        stopwords.add(u'生活')
+        back_coloring = np.array(Image.open(background))
+        #stopwords = set(STOPWORDS)
+        #stopwords.add(u'西安')
+        #stopwords.add(u'生活')
         wordcloud = WordCloud(
             font_path='simfang.ttf',  # 设置字体
             background_color="white",  # 背景颜色
             max_words=5000,  # 词云显示的最大词数
             mask=back_coloring,  # 设置背景图片
-            stopwords=stopwords, #停用词设置
+            # stopwords=stopwords, #停用词设置
             max_font_size=75,  # 字体最大值
             random_state=42,
             width=1000, height=860, margin=15,# 设置图片默认的大小,但是如果使用背景图片的话,那么保存的图片大小将会按照其大小保存,margin为词语边缘距离
@@ -226,6 +226,6 @@ class WeiboSpider:
 
 if(__name__ == "__main__"):
     spider = WeiboSpider()
-    spider.fetch('5566882921')
+    # spider.fetch('5566882921')
     spider.analyse()
 
