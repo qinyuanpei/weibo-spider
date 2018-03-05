@@ -13,6 +13,8 @@ from os import path
 from PIL import Image
 import numpy as np
 import jieba
+from jieba import analyse
+analyse.set_stop_words("stopword.txt")
 jieba.load_userdict("userdict.txt")
 import jieba.posseg as pseg
 from snownlp import SnowNLP
@@ -38,7 +40,7 @@ class WeiboSpider:
 
         #count = self.matchPages(soup)
         count = 660
-        for page in range(500,count+1):
+        for page in range(1,count+1):
             time.sleep(10)
             print(u'正在抓取页面：' + 'https://weibo.cn/u/' + uid + '?page=' + str(page))
             html = self.request('https://weibo.cn/u/' + uid + '?page=' + str(page))
@@ -163,13 +165,14 @@ class WeiboSpider:
             tags = json.loads(row[1])
             snow = SnowNLP(row[0].decode('utf-8'))
             if u'男嘉宾[向右]' in post:
-                female_tags += ','.join(map(lambda x:x['word'],tags))
+                female_tags += ','.join(map(lambda x:x['word']+x['flag'],tags))
             elif u'女嘉宾[向右]' in post:
-                male_tags += ','.join(map(lambda x:x['word'],tags))
+                male_tags += ','.join(map(lambda x:x['word']+x['flag'],tags))
                 
         # WordCloud
-        self.generateWordCloud(female_tags,'female.png','output_female.png')
-        self.generateWordCloud(male_tags,'male.png','output_male.png')
+        # self.generateWordCloud(female_tags,'female.png','output_female.png')
+        # self.generateWordCloud(male_tags,'male.png','output_male.png')
+        self.generateWordsFrequency(female_tags)
 
     def adjustData(self):
         # Filter Data
@@ -203,15 +206,15 @@ class WeiboSpider:
 
     def generateWordCloud(self,text,background,output):
         back_coloring = np.array(Image.open(background))
-        #stopwords = set(STOPWORDS)
-        #stopwords.add(u'西安')
-        #stopwords.add(u'生活')
+        stopwords = set(STOPWORDS)
+        stopwords.add(u'西安')
+        stopwords.add(u'生活')
         wordcloud = WordCloud(
             font_path='simfang.ttf',  # 设置字体
             background_color="white",  # 背景颜色
             max_words=5000,  # 词云显示的最大词数
             mask=back_coloring,  # 设置背景图片
-            # stopwords=stopwords, #停用词设置
+            stopwords=stopwords, #停用词设置
             max_font_size=75,  # 字体最大值
             random_state=42,
             width=1000, height=860, margin=15,# 设置图片默认的大小,但是如果使用背景图片的话,那么保存的图片大小将会按照其大小保存,margin为词语边缘距离
@@ -222,6 +225,15 @@ class WeiboSpider:
         plt.axis("off")
         plt.show()
         wordcloud.to_file(output)
+
+    def generateWordsFrequency(self,text):
+        freqs = {}
+        for token in text.split(','):
+            if(token in freqs.keys()):
+                freqs[token] += 1
+            else:
+                freqs[token] = 1
+        print(freqs)
     
 
 if(__name__ == "__main__"):
