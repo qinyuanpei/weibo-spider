@@ -14,7 +14,6 @@ from PIL import Image
 import numpy as np
 import jieba
 from jieba import analyse
-analyse.set_stop_words("stopword.txt")
 jieba.load_userdict("userdict.txt")
 import jieba.posseg as pseg
 from snownlp import SnowNLP
@@ -165,9 +164,9 @@ class WeiboSpider:
             tags = json.loads(row[1])
             snow = SnowNLP(row[0].decode('utf-8'))
             if u'男嘉宾[向右]' in post:
-                female_tags += ','.join(map(lambda x:x['word']+x['flag'],tags))
+                female_tags += ','.join(map(lambda x:x['word'],tags))
             elif u'女嘉宾[向右]' in post:
-                male_tags += ','.join(map(lambda x:x['word']+x['flag'],tags))
+                male_tags += ','.join(map(lambda x:x['word'],tags))
                 
         # WordCloud
         # self.generateWordCloud(female_tags,'female.png','output_female.png')
@@ -234,6 +233,14 @@ class WeiboSpider:
             else:
                 freqs[token] = 1
         print(freqs)
+
+        analyse.set_stop_words("stopword.txt")
+        # analyse.set_idf_path('idf.txt')
+        tags = analyse.extract_tags(text, topK=100, withWeight=True)
+        for tag in tags:
+            print(tag)
+        for x, w in jieba.analyse.textrank(text, withWeight=True):
+            print('%s %s' % (x, w))
     
 
 if(__name__ == "__main__"):
