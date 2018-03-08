@@ -171,7 +171,8 @@ class WeiboSpider:
         # WordCloud
         # self.generateWordCloud(female_tags,'female.png','output_female.png')
         # self.generateWordCloud(male_tags,'male.png','output_male.png')
-        self.generateWordsFrequency(female_tags)
+        # self.generateWordsFrequency(female_tags)
+       
 
     def adjustData(self):
         # Filter Data
@@ -236,11 +237,12 @@ class WeiboSpider:
 
         analyse.set_stop_words("stopword.txt")
         # analyse.set_idf_path('idf.txt')
-        tags = analyse.extract_tags(text, topK=100, withWeight=True)
+        tags = analyse.extract_tags(text, topK=100, withWeight=True, allowPOS=('ns', 'n', 'vn', 'v'))
         for tag in tags:
             print(tag)
-        for x, w in jieba.analyse.textrank(text, withWeight=True):
+        for x, w in jieba.analyse.textrank(text, withWeight=True, allowPOS=('ns', 'n', 'vn', 'v')):
             print('%s %s' % (x, w))
+
     
 
 if(__name__ == "__main__"):
