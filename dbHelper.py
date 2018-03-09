@@ -1,4 +1,4 @@
-class dbHelper(object):
+class DbHelper(object):
 
     def __init__(self,dbName):
         self.dbName = dbName
@@ -18,4 +18,10 @@ class dbHelper(object):
         print(u'数据库初始化完成!')
 
     def exec_sql(self,sql,values):
-        pass
+        self.cursor.execute(sql,values)
+        return self.cursor
+    
+    def commit(self):
+        self.connect.commit()
+
+    def 

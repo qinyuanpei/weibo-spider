@@ -3,6 +3,7 @@ import jieba
 import random
 import sqlite3
 from snownlp import SnowNLP
+from collections import Counter
 
 # 定义停用词
 stopwords = open('stopwords.txt','rt',encoding='utf-8').readlines()
@@ -12,20 +13,20 @@ userwords = open('userwords.txt','rt',encoding='utf-8').readlines()
 for word in userwords:
     jieba.add_word(word)
 
+# 定义文本主题
+subjects = ['身高','性格','房车','年龄','地区','星座']
+
 # 加载语料库
-def loadDocument(fileName):
+def loadDocument(subjects):
     document = {}
-    with open(fileName,'rt',encoding='utf-8') as file:
-        for line in file.readlines():
-            kv = line.split(':')
-            subject = kv[0].strip()
-            content = kv[1].strip()
+    for subject in subjects:
+        fileName = './train_data/{0}.txt'.format(subject)
+        with open(fileName,'rt',encoding='utf-8') as file:
+            contents = file.readlines()
             if(subject not in document.keys()):
-                contents = []
-                contents.append(content)
                 document[subject] = contents
             else:
-                document[subject].append(content)
+                document[subject].extend(content)
     return document 
 
 # 创建特征
@@ -36,7 +37,7 @@ def buildFeatures(sentence,document):
     for (subject,contents) in document.items():
         for content in contents:
             snow = SnowNLP(tokens)
-            if(max(snow.sim(content))>0.85):
+            if(max(snow.sim(content))>0.95):
                 if(subject in features):
                     features[subject]+=1
                 else:
@@ -46,7 +47,6 @@ def buildFeatures(sentence,document):
         features[subject] = features[subject] / total
 
     # 特征归一化
-    subjects = ['身高','性格','车房','年龄','地区','星座']
     for subject in subjects:
         if(subject not in features.keys()):
             features[subject] = 0
@@ -59,7 +59,7 @@ def buildFeatures(sentence,document):
             suggest_subject = key
     return features, suggest_subject
 
-document = loadDocument('features.txt')
+document = loadDocument(subjects)
 connect = sqlite3.connect('data.db')
 cursor = connect.cursor()
 sql = "SELECT Post, Tags FROM table_weibo WHERE Tags <> ''"
@@ -76,5 +76,11 @@ test_set = features[cut_length:]
 classifier = nltk.NaiveBayesClassifier.train(train_set)
 train_accuracy = nltk.classify.accuracy(classifier,train_set)
 print('accuracy: ' + str(train_accuracy))
+
+
+counts = Counter(map(lambda x: x[1],test_set))
+for key, count in counts.items():
+    freq = count/len(test_set)
+    print("subject {0} is: {1}".format(key,freq))
 
 
