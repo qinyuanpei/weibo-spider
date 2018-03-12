@@ -1,5 +1,6 @@
 import nltk
 import jieba
+from jieba import analyse
 import random
 import sqlite3
 from snownlp import SnowNLP
@@ -29,15 +30,22 @@ def loadDocument(subjects):
                 document[subject].extend(content)
     return document 
 
+# def similarText(tokens,content):
+
 # 创建特征
 def buildFeatures(sentence,document):
-    tokens = jieba.cut(sentence)
+    tokens = jieba.analyse.extract_tags(sentence)
     tokens = list(filter(lambda x:x.strip() not in stopwords, tokens))
     features = {}
     for (subject,contents) in document.items():
         for content in contents:
             snow = SnowNLP(tokens)
-            if(max(snow.sim(content))>0.95):
+            f = open('log.txt','wt')
+            text = ''
+            for vector in snow.sim(content):
+                text+=',' + str(vector)
+                f.write('[' + text + ']\n')
+            if(max(snow.sim(content))>0.99):
                 if(subject in features):
                     features[subject]+=1
                 else:
@@ -65,7 +73,7 @@ cursor = connect.cursor()
 sql = "SELECT Post, Tags FROM table_weibo WHERE Tags <> ''"
 cursor.execute(sql)
 rows = cursor.fetchall()
-features = [buildFeatures(row[0],document) for row in rows]
+features = [buildFeatures(row[0],document) for row in rows[0:100]]
 length = len(features)
 print('all features: ' + str(length))
 cut_length = int(length * 0.5)
