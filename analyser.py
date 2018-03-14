@@ -2,6 +2,7 @@ import re
 import math
 import nltk
 import jieba
+import datetime
 from jieba import analyse
 import random
 import sqlite3
@@ -80,6 +81,25 @@ def buildFeatures(sentence,document):
             suggest_subject = key
     return features, suggest_subject
 
+# 年龄分布
+def analyseAge(): 
+    ages = []
+    rows = loadData()
+    pattern = re.compile(r'\d{2}\年|\d{2}\岁')
+    for row in rows:
+        text = row[0].decode('utf-8')
+        matches = pattern.findall(text)
+        if(len(matches)>0):
+            match = matches[0]
+            if(u'年' in match):
+                now = datetime.datetime.now().year
+                birth = int(''.join(re.findall(r'\d',match)))
+                ages.append(now - 1900 - birth)
+            else:
+                ages.append(int(''.join(re.findall(r'\d',match))))
+    
+    print(ages)
+
 # 性别组成
 def analyseSex():
     rows = loadData()
@@ -128,9 +148,7 @@ def anslyseLocation():
                 else:
                     freqs[city]=1
     print(freqs)
-                
-                
-
+                       
 # 星座分析
 def analyseStar():
     pass
@@ -161,8 +179,11 @@ def anslyseWordcloud():
     pass
 
 if(__name__ == '__main__'):
+    analyseAge()
     analyseSex()
     analyseHeight()
     anslyseLocation()
+    analyseFeatures()
+
     
 
