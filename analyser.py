@@ -6,6 +6,7 @@ import datetime
 from jieba import analyse
 import random
 import sqlite3
+import drawing
 from snownlp import SnowNLP
 from collections import Counter
 
@@ -97,8 +98,11 @@ def analyseAge():
                 ages.append(now - 1900 - birth)
             else:
                 ages.append(int(''.join(re.findall(r'\d',match))))
-    
-    print(ages)
+    ages = list(filter(lambda x: x>10 and x<40, ages))
+    freqs = Counter(ages).items()
+    freqs = sorted(freqs,key=lambda x:x[0],reverse=False)
+    freqs = dict(freqs)
+    drawing.bar('年龄分布图',freqs,'年龄','人数',None)
 
 # 性别组成
 def analyseSex():
@@ -110,8 +114,7 @@ def analyseSex():
             sexs['male']+=1
         elif u'女嘉宾[向右]' in text:
             sexs['female']+=1
-    print('male:' + str(sexs['male']))
-    print('female:' + str(sexs['female']))
+    drawing.pie('性别组成',sexs,None)
 
 # 身高分布
 def analyseHeight():
@@ -129,6 +132,21 @@ def analyseHeight():
                 height['male'] = max(matches)
                 height['female'] = min(matches)
                 heights.append(height)
+    # 男性身高分布
+    male_heights = list(map(lambda x:x['male'],heights))
+    male_heights = Counter(male_heights).items()
+    male_heights = dict(sorted(male_heights,key=lambda x:x[0],reverse = False))
+    drawing.bar('男性身高分布',male_heights,'身高','人数',None)
+    # 女性身高分布
+    female_heights = list(map(lambda x:x['female'],heights))
+    female_heights = Counter(female_heights).items()
+    female_heights = dict(sorted(female_heights,key=lambda x:x[0],reverse = False))
+    drawing.bar('女性身高分布',female_heights,'身高','人数',None)
+    # 男女身高差分布
+    substract_heights = list(map(lambda x:x['male']-x['female'],heights))
+    substract_heights = Counter(substract_heights).items()
+    substract_heights = dict(sorted(substract_heights,key=lambda x:x[0],reverse = False))
+    drawing.bar('男女身高差分布',substract_heights,'身高差','人数',None)
 
 # 房车分析
 def analyseHouse():
@@ -147,11 +165,27 @@ def anslyseLocation():
                     freqs[city]+=1
                 else:
                     freqs[city]=1
-    print(freqs)
+    drawing.bar('地区分布图',freqs,'地区','人数',None)
                        
 # 星座分析
 def analyseStar():
-    pass
+    stars = ['白羊','金牛','双子','巨蟹','狮子','处女','天秤','天蝎','射手','摩羯','水瓶','双鱼']
+    freqs = {}
+    rows = loadData()
+    for row in rows:
+        text = row[0].decode('utf-8')
+        for star in stars:
+            if(star in text):
+                if(star in freqs.keys()):
+                    freqs[star]+=1
+                else:
+                    freqs[star]=1
+    for star in stars:
+        if(star not in freqs.keys()):
+            freqs[star] = 0
+    freqs = Counter(freqs).items()
+    freqs = dict(freqs)
+    drawing.pie('星座分布',freqs,None)
 
 # 特征分析
 def analyseFeatures():
@@ -181,6 +215,7 @@ def anslyseWordcloud():
 if(__name__ == '__main__'):
     analyseAge()
     analyseSex()
+    analyseStar()
     analyseHeight()
     anslyseLocation()
     analyseFeatures()

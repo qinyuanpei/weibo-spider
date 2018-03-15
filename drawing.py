@@ -2,8 +2,18 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 # 绘制柱形图
-def bar(title, data, fileName):
-    pass
+def bar(title, data, xlabel, ylabel, fileName):
+    labels = data.keys()
+    values = data.values()
+    plt.rcParams['font.sans-serif'] = ['simHei'] 
+    plt.rcParams['axes.unicode_minus'] = False
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xticks(range(len(labels)),labels)
+    plt.legend(loc='upper right',)
+    plt.bar(range(len(labels)), values, color = 'rgb')
+    plt.title(title)
+    plt.show()
 
 # 绘制饼图
 def pie(title, data, fileName):
@@ -26,5 +36,5 @@ def pie(title, data, fileName):
     plt.show()
 
 # 绘制词云
-def wordcloud(text,background,fileName)：
+def wordcloud(text,background,fileName):
     pass
