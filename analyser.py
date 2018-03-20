@@ -102,7 +102,7 @@ def analyseAge():
     freqs = Counter(ages).items()
     freqs = sorted(freqs,key=lambda x:x[0],reverse=False)
     freqs = dict(freqs)
-    drawing.bar('年龄分布图',freqs,'年龄','人数',None)
+    drawing.bar('男女性择偶观数据分析:年龄分布',freqs,'年龄','人数',None)
 
 # 性别组成
 def analyseSex():
@@ -114,7 +114,7 @@ def analyseSex():
             sexs['male']+=1
         elif u'女嘉宾[向右]' in text:
             sexs['female']+=1
-    drawing.pie('性别组成',sexs,None)
+    drawing.pie('男女性择偶观数据分析:男女性别比例',sexs,None)
 
 # 身高分布
 def analyseHeight():
@@ -136,17 +136,17 @@ def analyseHeight():
     male_heights = list(map(lambda x:x['male'],heights))
     male_heights = Counter(male_heights).items()
     male_heights = dict(sorted(male_heights,key=lambda x:x[0],reverse = False))
-    drawing.bar('男性身高分布',male_heights,'身高','人数',None)
+    drawing.bar('男女性择偶观数据分析:男性身高分布',male_heights,'身高','人数',None)
     # 女性身高分布
     female_heights = list(map(lambda x:x['female'],heights))
     female_heights = Counter(female_heights).items()
     female_heights = dict(sorted(female_heights,key=lambda x:x[0],reverse = False))
-    drawing.bar('女性身高分布',female_heights,'身高','人数',None)
+    drawing.bar('男女性择偶观数据分析:女性身高分布',female_heights,'身高','人数',None)
     # 男女身高差分布
     substract_heights = list(map(lambda x:x['male']-x['female'],heights))
     substract_heights = Counter(substract_heights).items()
     substract_heights = dict(sorted(substract_heights,key=lambda x:x[0],reverse = False))
-    drawing.bar('男女身高差分布',substract_heights,'身高差','人数',None)
+    drawing.bar('男女性择偶观数据分析:男女身高差分布',substract_heights,'身高差','人数',None)
 
 # 房车分析
 def analyseHouse():
@@ -185,7 +185,7 @@ def analyseStar():
             freqs[star] = 0
     freqs = Counter(freqs).items()
     freqs = dict(freqs)
-    drawing.pie('星座分布',freqs,None)
+    drawing.pie('男女性择偶观数据分析:星座分布',freqs,None)
 
 # 特征分析
 def analyseFeatures():
