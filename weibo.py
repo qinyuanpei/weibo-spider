@@ -14,12 +14,14 @@ from PIL import Image
 import numpy as np
 import jieba
 from jieba import analyse
-jieba.load_userdict("userdict.txt")
+jieba.load_userdict("userwords.txt")
 import jieba.posseg as pseg
 from snownlp import SnowNLP
 from wordcloud import WordCloud,STOPWORDS
 import matplotlib.pyplot as plt
 import timer
+
+stopwords = open('stopwords.txt','rt',encoding='utf-8').readlines()
 
 class WeiboSpider:
     def __init__(self):
@@ -108,10 +110,10 @@ class WeiboSpider:
 
     def analyse(self):
         # Adjust Data
-        self.adjustData()
+        # self.adjustData()
 
         # Split Words
-        self.splitWords()
+        # self.splitWords()
         
         # Generate Report
         self.generateReport()
@@ -147,7 +149,8 @@ class WeiboSpider:
         for s in sentences:
             words = pseg.cut(s[0])
             for w in words:
-                tags.append({'word':w.word,'flag':w.flag})
+                if(w.word not in stopwords):
+                    tags.append({'word':w.word,'flag':w.flag})
         return json.dumps(tags)
 
     def generateReport(self):
@@ -169,8 +172,8 @@ class WeiboSpider:
                 male_tags += ','.join(map(lambda x:x['word'],tags))
                 
         # WordCloud
-        # self.generateWordCloud(female_tags,'female.png','output_female.png')
-        # self.generateWordCloud(male_tags,'male.png','output_male.png')
+        self.generateWordCloud(female_tags,'./assets/female.png','output_female.png')
+        self.generateWordCloud(male_tags,'./assets/male.png','output_male.png')
         # self.generateWordsFrequency(female_tags)
        
 

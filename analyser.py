@@ -150,7 +150,11 @@ def analyseHeight():
 
 # 房车分析
 def analyseHouse():
-    pass
+    rows = loadData()
+    types = ['有房有车']
+    for row in rows:
+        text = row[0].decode('utf-8')
+
 
 # 地区分析
 def anslyseLocation():
@@ -193,20 +197,20 @@ def analyseFeatures():
     document = loadDocument(subjects)
     features = [buildFeatures(row[0],document) for row in rows]
     length = len(features)
-    print('total features: ' + str(length))
+    print('数据集: ' + str(length))
     cut_length = int(length * 0.5)
-    print('train features: ' + str(cut_length))
+    print('训练集: ' + str(cut_length))
     train_set = features[0:cut_length]
-    print('test features: ' + str(length - cut_length + 1))
+    print('测试机: ' + str(length - cut_length))
     test_set = features[cut_length:]
     classifier = nltk.NaiveBayesClassifier.train(train_set)
     train_accuracy = nltk.classify.accuracy(classifier,train_set)
-    print('accuracy: ' + str(train_accuracy))
+    print('准确度: ' + str(train_accuracy))
 
     counts = Counter(map(lambda x: x[1],test_set))
     for key, count in counts.items():
         freq = count/len(test_set)
-        print("subject <{0}> is: {1}".format(key,freq))
+        print("主题<{0}>: {1}".format(key,freq))
 
 # 词云分析
 def anslyseWordcloud():
